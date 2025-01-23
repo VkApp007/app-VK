@@ -1,3 +1,3 @@
 Hi Iam Vankhet 
-this sample Webite 
+this sample Website 
 but its perfetch for me 
