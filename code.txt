@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Inline CSS for fixed size image */
+        .contact-image {
+            width: 400px;  /* Adjust the width as needed */
+            height: 200px; /* Adjust the height as needed */
+            object-fit: cover; /* Ensures the image scales correctly */
+            display: block;
+            margin: 0 auto; 
+        }
+        @media (max-width: 600px) {
+            .contact-image {
+                width: 400px; 
+                height: 200px; 
+            }
+        }
+        .thank-you-message {
+            display: none;
+            color: green;
+            font-size: 1.2em;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .message-history {
+            margin-top: 20px;
+        }
+        .message-history h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .message-history ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .message-history li {
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">TIGER POWER</div>
+        <nav>
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="contact.html" class="nav-link">Contact</a>
+        </nav>
+    </header>
+    <p>
+        <img src="images/contact.png" alt="contact" class="contact-image">
+    </p>
+    <main>
+        <section class="contact-form">
+            <h1>Contact Us</h1>
+            <form id="contactForm" action="submit_form.php" method="post">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" rows="4" required></textarea>
+
+                <button type="submit">Send Message</button>
+            </form>
+            <div id="thankYouMessage" class="thank-you-message">Thanks for your message!</div>
+            
+            <!-- Message History Section -->
+            <div id="messageHistory" class="message-history">
+                <h2>Message History</h2>
+                <ul id="historyList"></ul>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; TIGER POWER - All Rights Reserved 2024</p>
+    </footer>
+    <script>
+        // Load message history from localStorage
+        let messages = JSON.parse(localStorage.getItem('messageHistory')) || [];
+
+        document.getElementById('contactForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            // Change the document title to "Customer sent message by website Tiger Power"
+            const originalTitle = document.title;
+            document.title = "Customer sent message by website Tiger Power";
+
+            // Get form data
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+
+            // Telegram bot token and chat ID (replace with your own)
+            const botToken = '6739270142:AAFw39rovRXAz9KHbaczbl1ZQvVWxnf58ic';
+            const chatId = '-4141102086';
+
+            // Prepare the message to send with source information
+            const telegramMessage = `*Customer message from Website Tiger Power:*\n` +
+                                    `*Name:* ${name}\n` +
+                                    `*Email:* ${email}\n` +
+                                    `*Message:* ${message}`;
+
+            // Send message to Telegram
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: telegramMessage,
+                    parse_mode: 'Markdown' // Use Markdown for formatting
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    console.log('Message sent successfully to Telegram');
+                    // Add the message to the history array
+                    messages.push({ name, email, message });
+                    // Save the updated history to localStorage
+                    localStorage.setItem('messageHistory', JSON.stringify(messages));
+                    updateMessageHistory(); // Update the history display
+                } else {
+                    console.error('Error sending message to Telegram:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Revert the title to its original after a delay
+                setTimeout(() => {
+                    document.title = originalTitle;
+                }, 5000); // Reverts title after 5 seconds
+            });
+
+            // Show thank you message
+            const thankYouMessage = document.getElementById('thankYouMessage');
+            thankYouMessage.style.display = 'block';
+
+            // Hide thank you message after 5 seconds
+            setTimeout(function() {
+                thankYouMessage.style.display = 'none';
+            }, 5000); 
+
+            // Reset the form
+            event.target.reset();
+        });
+
+        // Function to update the message history display
+        function updateMessageHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = ''; // Clear the current list
+
+            // Display each message in the history array
+            messages.forEach((msg, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${index + 1}. Name: ${msg.name}, Email: ${msg.email}, Message: ${msg.message}`;
+                historyList.appendChild(listItem);
+            });
+        }
+
+        // Initialize the message history on page load
+        updateMessageHistory();
+    </script>
+</body>
+</html>
