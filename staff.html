@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sales Report - Tiger Power</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/Logo/icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/Logo/icon.png">
+    <style>
+        /* Add basic styles for the new summary modal (can reuse/adapt existing modal styles) */
+        .summary-modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1050; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Dim background */
+        }
+        .summary-modal .modal-content {
+             background-color: #fefefe;
+             margin: 10% auto; /* 10% from the top and centered */
+             padding: 25px;
+             border: 1px solid #ccc;
+             width: 85%; /* Slightly wider for report */
+             max-width: 650px; /* Max width */
+             border-radius: var(--border-radius);
+             position: relative;
+             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+         }
+         .summary-modal .close-modal {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+         }
+        .summary-modal .close-modal:hover,
+        .summary-modal .close-modal:focus {
+            color: black;
+            text-decoration: none;
+        }
+        #summaryModalContent {
+             max-height: 60vh; /* Limit height and allow scrolling */
+             overflow-y: auto;
+             margin-top: 15px;
+             padding-right: 10px; /* Space for scrollbar */
+             line-height: 1.6;
+        }
+         #summaryModalContent p { margin-bottom: 0.5em; }
+         #summaryModalContent strong { color: var(--primary-color); }
+         #summaryModalContent h4 { margin-top: 1em; margin-bottom: 0.5em; font-size: 1.1em; color: var(--secondary-color); border-bottom: 1px solid #eee; padding-bottom: 5px; }
+         #summaryModalContent .category-block { margin-bottom: 1em; padding-left: 10px; }
+         #summaryModalContent .item-line { display: block; margin-left: 15px; font-size: 0.95em; }
+         #summaryModalContent .total-line { font-weight: bold; margin-top: 5px; }
+         #summaryModalContent .meta-info p { font-size: 0.9em; color: #555; margin-bottom: 3px; }
+
+         /* Style for the View Summary button */
+         .secondary-btn {
+            background-color: var(--secondary-color); /* Use a secondary color */
+            color: white;
+         }
+         .secondary-btn:hover {
+             background-color: #5a6268; /* Darker secondary color on hover */
+         }
+         .form-actions.submit-section {
+             display: flex; /* Use flexbox */
+             flex-wrap: wrap; /* Allow wrapping on smaller screens */
+             gap: 15px; /* Space between buttons */
+             align-items: center; /* Align items vertically */
+         }
+          /* Ensure error message takes full width if needed */
+         #submitReportError { width: 100%; order: 3; /* Place it below buttons */ }
+
+        /* Styles for the Target Status Display */
+        .target-status-display {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block; /* Or block */
+            margin-top: 5px;
+        }
+        .target-status-display.status-yes {
+            background-color: #d1e7dd; /* Light green */
+            color: #0f5132; /* Dark green */
+            border: 1px solid #badbcc;
+        }
+        .target-status-display.status-no {
+            background-color: #f8d7da; /* Light red */
+            color: #842029; /* Dark red */
+            border: 1px solid #f5c2c7;
+        }
+        .target-status-display.status-not-calculated { /* Style for initial state */
+             background-color: #e9ecef; /* Light gray */
+             color: #495057; /* Dark gray */
+             border: 1px solid #ced4da;
+        }
+
+        /* --- Category Selection Modal Styles --- */
+        .category-select-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1060; /* Higher than summary modal */
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+        }
+        .category-select-modal .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* Adjust vertical position */
+            padding: 20px 25px; /* Adjusted padding */
+            border: 1px solid #ccc;
+            width: 80%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .category-select-modal .close-modal { /* Reuse close style */
+           color: #aaa;
+           position: absolute;
+           top: 10px;
+           right: 20px;
+           font-size: 32px;
+           font-weight: bold;
+           cursor: pointer;
+           line-height: 1;
+        }
+       .category-select-modal .close-modal:hover,
+       .category-select-modal .close-modal:focus {
+           color: black;
+           text-decoration: none;
+       }
+        .category-select-modal h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        #categoryListContainer {
+            max-height: 40vh; /* Limit height */
+            overflow-y: auto; /* Add scroll */
+            margin-bottom: 20px; /* More space below list */
+            border: 1px solid #eee;
+            padding: 15px; /* Padding inside the list */
+            background-color: #f9f9f9; /* Slight background */
+            border-radius: 4px;
+        }
+        .category-select-item {
+            display: block;
+            margin-bottom: 10px; /* Space between items */
+            padding: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+         }
+         .category-select-item:hover {
+            background-color: #efefef;
+         }
+        .category-select-item label {
+            margin-left: 10px; /* More space after checkbox */
+            cursor: pointer;
+            vertical-align: middle; /* Align label with checkbox */
+        }
+         .category-select-item input[type="checkbox"] {
+             vertical-align: middle; /* Align checkbox */
+             width: 16px; /* Slightly larger checkbox */
+             height: 16px;
+         }
+         .category-select-modal .btn { /* Ensure modal buttons have spacing */
+             margin-top: 10px;
+         }
+
+    </style>
+</head>
+<body>
+
+    <main class="staff-page-container">
+        <div class="staff-container card">
+            <header class="staff-header">
+                <div class="header-left">
+                    <h1><i class="fas fa-file-invoice-dollar"></i> Sales Report</h1>
+                    <p id="staffGreeting">Hello, Staff</p> <!-- ID seems correct -->
+                </div>
+                <button id="staffLogoutBtn" class="btn logout"> <!-- ID seems correct -->
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </header>
+
+            <form id="salesReportForm"> <!-- ID seems correct -->
+                <fieldset class="form-section">
+                    <legend>Report Details</legend>
+                    <div class="form-group">
+                        <label for="staffUsername"><i class="fas fa-user-tag"></i> Staff Name:</label>
+                        <input type="text" id="staffUsername" readonly class="readonly-input"> <!-- ID seems correct -->
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-business-time"></i> Shift:</label>
+                        <div class="shift-options">
+                            <button type="button" id="morningShift" class="shift-btn active"> <!-- ID seems correct -->
+                                <i class="fas fa-sun"></i> Morning (8AM-5PM)
+                            </button>
+                            <button type="button" id="eveningShift" class="shift-btn"> <!-- ID seems correct -->
+                                <i class="fas fa-moon"></i> Evening (12PM-9PM)
+                            </button>
+                        </div>
+                        <input type="hidden" id="selectedShift" value="Morning"> <!-- ID seems correct -->
+                    </div>
+                    <div class="form-group">
+                        <label for="saleLocation"><i class="fas fa-store"></i> Sale Location:</label>
+                        <input type="text" id="saleLocation" placeholder="e.g., Makro Cambodia / AEON 1" required> <!-- ID seems correct -->
+                    </div>
+                </fieldset>
+                <fieldset class="form-section">
+                    <legend>Sales Breakdown</legend>
+                    <div class="form-group">
+                         <label><i class="fas fa-boxes-stacked"></i> Sales Items:</label>
+                         <p class="form-hint">Add each sales category using the button below. Items and quantities will determine target status automatically.</p>
+                         <!-- == MODIFIED Button: Opens the category selection modal == -->
+                         <button type="button" id="openCategoryModalBtn" class="btn accent-btn add-category-main-btn">
+                            <i class="fas fa-plus-circle"></i> Select Categories to Add
+                         </button>
+                        <div id="categoriesContainer" class="categories-container"> <!-- ID seems correct -->
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="form-section">
+                    <legend>Additional Information</legend>
+                    <div class="form-group">
+                        <label for="notice"><i class="fas fa-clipboard"></i> Notes / Observations:</label>
+                        <textarea id="notice" rows="4" placeholder="Optional: Any issues, stock levels, customer feedback..."></textarea> <!-- ID seems correct -->
+                    </div>
+                    <div class="form-group">
+                       <label><i class="fas fa-bullseye-pointer"></i> Overall Target Status:</label>
+                       <p id="overallTargetStatusDisplay" class="target-status-display status-not-calculated">Not Calculated</p>
+                       <!-- Hidden input to store the calculated value for submission -->
+                       <input type="hidden" id="calculatedOverallTarget" value="NO">
+                    </div>
+                    <div class="form-group location-group">
+                        <label><i class="fas fa-map-marked-alt"></i> Report Location:</label>
+                        <div id="locationStatus" class="location-status"> <!-- ID seems correct -->
+                             <i class="fas fa-spinner fa-spin"></i> Requesting location permission...
+                        </div>
+                        <button type="button" id="retryLocationBtn" class="btn small-btn" style="display: none;">Retry Location</button> <!-- ID seems correct -->
+                        <input type="hidden" id="userLocation"> <!-- ID seems correct -->
+                    </div>
+                </fieldset>
+                 <!-- MODIFIED: Submit Section -->
+                <div class="form-actions submit-section">
+                     <!-- NEW: View Summary Button -->
+                     <button type="button" id="viewSummaryBtn" class="btn secondary-btn">
+                        <i class="fas fa-eye"></i> View Summary
+                    </button>
+                     <!-- Existing Submit Button -->
+                    <button type="submit" class="btn submit-btn main-submit-btn">
+                        <i class="fas fa-paper-plane"></i> Submit Daily Report
+                    </button>
+                    <div id="submitReportError" class="error-message" style="display: none;"></div> <!-- ID seems correct -->
+                </div>
+            </form>
+        </div>
+
+         <footer class="staff-footer">
+            <p>© 2025 Tiger Power by Vankhet. All rights reserved.</p>
+        </footer>
+
+    </main>
+
+     <!-- Summary Modal Structure -->
+    <div id="summaryModal" class="summary-modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeSummaryModal" title="Close">×</span>
+            <h3 id="summaryModalTitle"><i class="fas fa-file-alt"></i> Report Summary Preview</h3>
+            <div id="summaryModalContent">
+                <!-- Summary content will be loaded here by JS -->
+                <p>Fill out the report and click "View Summary" to generate preview.</p>
+            </div>
+        </div>
+    </div>
+    <!-- END: Summary Modal Structure -->
+
+    <!-- == NEW: Category Selection Modal == -->
+    <div id="categorySelectionModal" class="category-select-modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeCategoryModal" title="Close">×</span>
+            <h3>Select Categories</h3>
+            <div id="categoryListContainer">
+                <!-- Checkboxes will be populated here by JS -->
+                <p>Loading categories...</p>
+            </div>
+            <button id="addSelectedCategoriesBtn" class="btn submit-btn">Add Selected</button>
+            <button id="cancelCategorySelectionBtn" class="btn secondary-btn" style="margin-left: 10px;">Cancel</button>
+        </div>
+    </div>
+    <!-- == END: Category Selection Modal == -->
+
+
+    <!-- Category Template -->
+    <template id="categoryTemplate"> <!-- ID seems correct -->
+        <div class="category">
+            <div class="category-header">
+                 <div class="category-select-wrapper">
+                    <i class="fas fa-tags category-icon"></i>
+                    <!-- Crucial Select for Category Name -->
+                    <select class="category-name form-control" required> <!-- Class used by JS -->
+                        <option value="" disabled selected>-- Select Category --</option>
+                    </select>
+                 </div>
+                <button type="button" class="remove-category-btn btn-icon danger" title="Remove Category & All Items"> <!-- Class used by JS -->
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <!-- Container where items are added -->
+            <div class="items-container"> <!-- Class used by JS -->
+                 <p class="no-items-hint" style="display:none;">Select a category first or use the button below to add items.</p> <!-- Class used by JS -->
+            </div>
+            <div class="category-actions">
+                <!-- Button to add items to THIS category -->
+                <button type="button" class="add-item-btn btn small-btn accent-btn"> <!-- Class used by JS -->
+                    <i class="fas fa-plus"></i> Add Item to Category
+                </button>
+                <div class="category-total">
+                    Category Total: <span class="total-value">0</span> Units <!-- Class used by JS -->
+                </div>
+                 <!-- Button to add a whole new category block -->
+                 <button type="button" class="btn accent-btn small-btn add-another-category-btn" style="margin-top: 10px;"> <!-- Class used by JS -->
+                    <i class="fas fa-plus-circle"></i> Add Another Category
+                 </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Item Template -->
+    <template id="itemTemplate"> <!-- ID seems correct -->
+        <div class="item">
+            <div class="item-select-wrapper">
+                <i class="fas fa-box item-icon"></i>
+                 <!-- Crucial Select for Item Name -->
+                 <select class="item-name form-control" required> <!-- Class used by JS -->
+                     <option value="" disabled selected>-- Select Item --</option>
+                 </select>
+            </div>
+            <div class="item-qty-wrapper">
+                 <i class="fas fa-hashtag qty-icon"></i>
+                <!-- Crucial Input for Item Quantity -->
+                <input type="number" class="item-qty form-control" placeholder="Qty" min="0" value="0" required> <!-- Class used by JS -->
+            </div>
+            <button type="button" class="remove-item-btn btn-icon danger small" title="Remove Item"> <!-- Class used by JS -->
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </template>
+
+    <!-- Script Link -->
+    <script type="module" src="script.js"></script> <!-- Seems correct -->
+</body>
+</html>

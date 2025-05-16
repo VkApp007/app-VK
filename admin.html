@@ -1,0 +1,638 @@
+<!DOCTYPE html> <!-- Add <!DOCTYPE html> for proper rendering -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Olive Oil">
+    <meta name="author" content="tiger power">
+    <link rel="manifest" href="/manifest.json">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="images/Logo/icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/Logo/icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/Logo/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200;0,400;0,600;0,700;1,200;1,700&display=swap"
+        rel="stylesheet">
+    <!-- Removed duplicate CSS links and kept necessary ones -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-icons.css" rel="stylesheet">
+    <!-- <link href="css/vegas.min.css" rel="stylesheet"> --> <!-- Removed if not used -->
+    <!-- <link href="css/tooplate-barista.css" rel="stylesheet"> --> <!-- Removed if not used -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Use this or bootstrap-icons -->
+    <link rel="stylesheet" href="styles.css"> <!-- Your custom styles -->
+
+    <title>Admin Dashboard - TIGER POWER</title> <!-- Single Title -->
+
+    <!-- Include SheetJS library for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Include Chart.js and Datalabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.1.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <!-- *** ADDED: Hammer.js for touch support (needed by zoom plugin) *** -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <!-- *** ADDED: Chart.js Zoom Plugin *** -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+
+    <style>
+        /* --- Existing styles --- */
+        .export-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+        }
+
+        .export-controls h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-range-export {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 15px;
+        }
+
+        .date-range-export .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+        }
+
+        .date-range-export label {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #495057;
+        }
+
+        .date-range-export input[type="date"] {
+            padding: 8px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+
+        #exportExcelBtn {
+            padding: 9px 15px;
+            background-color: #198754;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            align-self: flex-end;
+        }
+
+        #exportExcelBtn:hover {
+            background-color: #157347;
+        }
+
+        #exportExcelBtn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        #exportExcelBtn i {
+            margin-right: 6px;
+        }
+
+        .export-status-message {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.9em;
+            min-height: 1.2em;
+            color: var(--gray-color);
+        }
+
+        /* --- Graph Specific Styles --- */
+        .item-sales-graph {
+            margin-top: 20px;
+        }
+
+        .item-sales-graph .card-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .graph-filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .graph-filters .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+        }
+
+        .graph-filters label {
+            font-size: 0.85em;
+            margin-bottom: 3px;
+            color: #495057;
+        }
+
+        .graph-filters input[type="date"] {
+            padding: 6px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .graph-filters .btn {
+            padding: 7px 12px;
+            font-size: 0.9em;
+            align-self: flex-end;
+        }
+
+        /* *** ADDED: Style for reset button spacing *** */
+        #resetGraphZoomBtn {
+            background-color: var(--secondary-color);
+        }
+
+        #resetGraphZoomBtn:hover {
+            background-color: #5a6268;
+        }
+
+        .graph-container {
+            position: relative;
+            padding: 20px;
+            min-height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fdfdfd;
+            border-radius: var(--border-radius);
+            border: 1px solid #dee2e6;
+            margin-top: 15px;
+            overflow: hidden;
+            /* Prevent potential overflow issues */
+        }
+
+        .graph-container canvas {
+            max-width: 100%;
+            max-height: 500px;
+            /* Cursor indicates interactivity */
+            cursor: grab;
+        }
+
+        .graph-container canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Cursor while panning */
+        .graph-message {
+            text-align: center;
+            color: var(--gray-color);
+            font-style: italic;
+            font-size: 1.1em;
+        }
+
+        #loadGraphError {
+            font-size: 1em;
+            padding: 10px;
+            border: 1px dashed var(--danger-color);
+            border-radius: 4px;
+        }
+
+        /* --- Add User Popup Styles (Ensure it's visible when display:block) --- */
+        .form-popup {
+            display: none;
+            /* Initially hidden */
+            position: fixed;
+            /* Or absolute relative to parent */
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 25px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            /* Ensure it's above other content */
+            min-width: 350px;
+            max-width: 90%;
+            border-radius: var(--border-radius);
+        }
+
+        .form-popup .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .form-popup .popup-header h3 {
+            margin: 0;
+            font-size: 1.4em;
+            color: var(--primary-color);
+        }
+
+        /* Ensure modal styles allow visibility */
+        .report-modal {
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            /* Stay in place */
+            z-index: 1000;
+            /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            /* Full width */
+            height: 100%;
+            /* Full height */
+            overflow: auto;
+            /* Enable scroll if needed */
+            background-color: rgba(0, 0, 0, 0.5);
+            /* Black w/ opacity */
+        }
+
+        .report-modal .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            /* 10% from the top and centered */
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%;
+            /* Could be more or less, depending on screen size */
+            max-width: 700px;
+            border-radius: var(--border-radius);
+            position: relative;
+        }
+
+        .report-modal .close-modal {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .report-modal .close-modal:hover,
+        .report-modal .close-modal:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        /* Style for target status badges (used in modal and table) */
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-badge.status-yes {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+
+        .status-badge.status-no {
+            background-color: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+        }
+
+        .status-badge:not(.status-yes):not(.status-no) {
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+        }
+
+        /* --- NEW: How to Use Video Box Styles --- */
+        .how-to-use-card {
+            margin-top: 20px;
+            /* Add space above */
+            /* You can add specific width/max-width here if needed,
+               but it might be better to let it flow or use grid/flex */
+            /* max-width: 300px; */
+            /* Example: limit width */
+        }
+
+        .how-to-use-card .card-body {
+            padding: 15px;
+            text-align: center;
+            /* Center video and text */
+        }
+
+        .how-to-use-card video {
+            max-width: 100%;
+            /* Make video responsive */
+            height: auto;
+            /* Maintain aspect ratio */
+            /* Set max height if needed, like the approx 200px target */
+            max-height: 250px;
+            border: 1px solid #ddd;
+            /* Optional border */
+            background-color: #f0f0f0;
+            /* Background if video doesn't load */
+            display: block;
+            /* Prevent extra space below */
+            margin: 0 auto 10px auto;
+            /* Center block element and add space below */
+        }
+
+        .video-warning {
+            font-size: 0.85em;
+            color: var(--danger-color, #dc3545);
+            /* Use danger color */
+            margin-top: 10px;
+            background-color: #f8d7da;
+            /* Light red background */
+            border: 1px solid #f5c2c7;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: left;
+            /* Align warning text left */
+        }
+
+        /* Add to your existing styles */
+        #videoContainer {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="header-left">
+                <h1><i class="fas fa-tachometer-alt"></i>Admin Dashboard</h1>
+                <p id="adminGreeting">Welcome back, Admin</p>
+            </div>
+            <button id="logoutBtn" class="btn logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </header>
+
+        <div class="admin-content">
+            <!-- == NEW: How to Use Video Box == -->
+            <div class="card how-to-use-card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2><i class="fas fa-question-circle"></i> How to Use Admin Dashboard</h2>
+                    <button id="toggleVideoBtn" class="btn small-btn">
+                        <i class="fas fa-eye"></i> Show
+                    </button>
+                </div>
+                <div class="card-body" id="videoContainer" style="display: none;">
+                    <video controls preload="metadata"> <!-- preload="metadata" is good practice -->
+                        <!-- == IMPORTANT: CHANGE THIS PATH == -->
+                        <source src="video/How to use Admin-dashboard.wmv" type="video/x-ms-wmv">
+                        <source src="video/How to use Admin-dashboard.mp4" type="video/mp4">
+                        <!-- == FALLBACK MESSAGE == -->
+                        Your browser does not support the WMV video format.
+                        Please use a different browser or contact support.
+                        We recommend converting the video to MP4 (H.264) for compatibility.
+                    </video>
+                </div>
+            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const toggleBtn = document.getElementById('toggleVideoBtn');
+                    const videoContainer = document.getElementById('videoContainer');
+
+                    toggleBtn.addEventListener('click', function () {
+                        if (videoContainer.style.display === 'none') {
+                            videoContainer.style.display = 'block';
+                            toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
+                        } else {
+                            videoContainer.style.display = 'none';
+                            toggleBtn.innerHTML = '<i class="fas fa-eye"></i> Show';
+                        }
+                    });
+                });
+            </script>
+
+            <!-- User Management Card -->
+            <div class="card user-management">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> User Management</h2>
+                    <button id="addUserBtn" class="btn">
+                        <i class="fas fa-user-plus"></i> Add New User
+                    </button>
+                </div>
+
+                <!-- ADD USER FORM POPUP -->
+                <div id="addUserForm" class="form-popup">
+                    <div class="popup-header">
+                        <h3><i class="fas fa-user-edit"></i> Add New User</h3>
+                        <button id="cancelAddUser" class="btn-icon" title="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="newUserForm">
+                        <div class="form-group">
+                            <label for="newUserEmail"><i class="fas fa-envelope"></i> Email:</label>
+                            <input type="email" id="newUserEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newUserName"><i class="fas fa-user"></i> Name:</label>
+                            <input type="text" id="newUserName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword"><i class="fas fa-lock"></i> Password:</label>
+                            <input type="password" id="newPassword" placeholder="Min 6 characters" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userRole"><i class="fas fa-user-tag"></i> Role:</label>
+                            <select id="userRole" required>
+                                <option value="staff">Staff</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn">
+                                <i class="fas fa-save"></i> Save User
+                            </button>
+                        </div>
+                        <div id="addUserError" class="error-message" style="display: none;"></div>
+                    </form>
+                </div>
+                <!-- END ADD USER FORM POPUP -->
+
+                <div class="table-responsive">
+                    <h3><i class="fas fa-list"></i> User List</h3>
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-envelope"></i> Email</th>
+                                <th><i class="fas fa-user"></i> Name</th>
+                                <th><i class="fas fa-user-tag"></i> Role</th>
+                                <th><i class="fas fa-cog"></i> Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersList">
+                            <tr>
+                                <td colspan="4" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading
+                                    users...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="loadUserError" class="error-message" style="display: none;"></div>
+            </div>
+
+            <!-- Sales Reports Card -->
+            <div class="card report-viewing">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-bar"></i> Sales Reports</h2>
+                    <div class="filter-actions">
+                        <button id="refreshReports" class="btn small-btn" title="Refresh Report List">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="export-controls">
+                    <h4><i class="fas fa-file-excel"></i> Export Reports</h4>
+                    <div class="date-range-export">
+                        <div class="form-group">
+                            <label for="exportStartDate"><i class="fas fa-calendar-alt"></i> Start Date:</label>
+                            <input type="date" id="exportStartDate" name="exportStartDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="exportEndDate"><i class="fas fa-calendar-alt"></i> End Date:</label>
+                            <input type="date" id="exportEndDate" name="exportEndDate" class="form-control">
+                        </div>
+                        <button id="exportExcelBtn" class="btn action-btn">
+                            <i class="fas fa-download"></i> Export to Excel
+                        </button>
+                        <!-- Changed class here -->
+                        <a href="https://docs.google.com/spreadsheets/d/1prxsFWhR_be3hCuJPm89JKRPt43zajqPeKVY_Ldm14M/edit?usp=drive_link"
+                            target="_blank" rel="noopener noreferrer" class="btn small-btn" id="viewOnSheetBtn">
+                            <i class="fas fa-external-link-alt"></i> Views On Google Sheet
+                        </a>
+                    </div>
+                    <span id="exportStatus" class="export-status-message"></span>
+                </div>
+            </div>
+            <div class="reports-filters">
+                <div class="filter-group">
+                    <label for="reportDateFilter"><i class="fas fa-calendar-alt"></i> Filter by Date</label>
+                    <input type="date" id="reportDateFilter" class="form-control">
+                </div>
+                <div class="filter-group">
+                    <label for="reportStaffFilter"><i class="fas fa-user"></i> Filter by Staff</label>
+                    <select id="reportStaffFilter" class="form-control">
+                        <option value="">All Staff</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="reportShiftFilter"><i class="fas fa-clock"></i> Filter by Shift</label>
+                    <select id="reportShiftFilter" class="form-control">
+                        <option value="">All Shifts</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                            <th><i class="fas fa-user"></i> Staff</th>
+                            <th><i class="fas fa-clock"></i> Shift</th>
+                            <th><i class="fas fa-map-marker-alt"></i> Location</th>
+                            <th><i class="fas fa-boxes"></i> Total Units</th>
+                            <!-- NEW COLUMN: Total Cartons -->
+                            <th><i class="fas fa-box-archive"></i> Total Cartons</th>
+                            <th><i class="fas fa-bullseye"></i> Target Met</th>
+                            <th><i class="fas fa-eye"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsList">
+                        <!-- UPDATED COLSPAN -->
+                        <tr>
+                            <td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading
+                                reports...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="loadReportsError" class="error-message" style="display: none;"></div>
+        </div>
+
+        <!-- Item Sales Graph Section -->
+        <div class="card item-sales-graph">
+            <div class="card-header">
+                <h2><i class="fas fa-chart-pie"></i> Item Sales Performance</h2>
+                <div class="graph-filters">
+                    <div class="form-group">
+                        <label for="graphStartDate"><i class="fas fa-calendar-alt"></i> Start Date:</label>
+                        <input type="date" id="graphStartDate" name="graphStartDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="graphEndDate"><i class="fas fa-calendar-alt"></i> End Date:</label>
+                        <input type="date" id="graphEndDate" name="graphEndDate" class="form-control">
+                    </div>
+                    <button id="updateGraphBtn" class="btn action-btn"><i class="fas fa-filter"></i> Update
+                        Graph</button>
+                    <button id="resetGraphZoomBtn" class="btn small-btn" title="Reset Zoom/Pan" style="display: none;">
+                        <i class="fas fa-search-minus"></i> Reset View
+                    </button>
+                    <span class="form-hint" style="font-size: 0.8em; align-self: center;">(Leave dates blank for All
+                        Time)</span>
+                </div>
+            </div>
+            <div class="graph-container">
+                <div id="graphLoadingMessage" class="graph-message">
+                    <i class="fas fa-spinner fa-spin"></i> Loading graph data...
+                </div>
+                <canvas id="itemSalesChart" style="display: none;"></canvas>
+                <div id="loadGraphError" class="error-message" style="display: none;"></div>
+                <div id="noGraphDataMessage" class="graph-message" style="display: none;">
+                    No items sold in the selected date range.
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- End admin-content -->
+    </div> <!-- End admin-container -->
+
+    <!-- REPORT DETAILS MODAL -->
+    <div id="reportModal" class="report-modal">
+        <div class="modal-content">
+            <span class="close-modal" title="Close">×</span>
+            <h3 id="modalReportTitle"><i class="fas fa-file-alt"></i> Report Details</h3>
+            <div id="modalReportContent">
+                <!-- Content loaded by JS -->
+            </div>
+        </div>
+    </div>
+    <!-- END REPORT DETAILS MODAL -->
+
+    <script type="module" src="script.js"></script>
+
+    <!-- Footer -->
+    <div style="text-align: center; padding: 20px 0; margin-top: 30px; border-top: 1px solid #eee;">
+        <p>© 2025 Tiger Power by Vankhet. All rights reserved.</p>
+    </div>
+
+</body>
+
+</html>
